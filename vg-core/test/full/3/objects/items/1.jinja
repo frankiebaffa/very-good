@@ -1,0 +1,7 @@
+{% include "../object.jinja" as object %}
+
+{% block name %}Item{% endblock %}
+{% block parent %}{{ object.name }}{% endblock %}
+{% block description -%}
+	This is the item description.
+{%- endblock %}

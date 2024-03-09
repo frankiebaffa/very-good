@@ -1,0 +1,6 @@
+{% block text %}Here is some text.{% endblock %}
+{% if text empty -%}
+	Text is not defined.
+{%- else -%}
+	{{ text }}
+{%- endif %}

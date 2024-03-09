@@ -1,0 +1,5 @@
+{% block test %}
+	This is the test content.
+	And this is some more.
+{% endblock %}
+{{ test | trim | detab | flatten | lower | replace " " "" }}

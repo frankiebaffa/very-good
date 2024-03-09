@@ -1,0 +1,6 @@
+{% block for-path %}./items{% endblock %}
+{% for item in "{{ for-path }}" -%}
+	{{ item }}.
+{%- else -%}
+	No items.
+{%- endfor %}

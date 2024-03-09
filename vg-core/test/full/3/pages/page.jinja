@@ -1,0 +1,10 @@
+{% extends "../templates/page.jinja" %}
+
+{% include "../objects/object.jinja" %}
+
+{% block items %}
+	<p>{{ description }}</p>
+	{% for item in "../objects/items" %}
+		{% include "../templates/item-card.jinja" %}
+	{% endfor %}
+{% endblock %}

@@ -1,0 +1,9 @@
+[package]
+name = "vg-core"
+version = "1.0.0"
+edition = "2021"
+description = "Very Good Templating Engine Core"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]

@@ -1,0 +1,9 @@
+{% extends "./page.jinja" %}
+
+{% block title %}Items{% endblock %}
+
+{% block body %}
+		{% for item in "./items" %}
+			<p>{{ loop.position }}. {{ item }}</p>
+		{% endfor %}
+{% endblock %}

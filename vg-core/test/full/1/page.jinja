@@ -1,0 +1,8 @@
+{% extends "./template.jinja" %}
+
+{% block title %}{% if title %}{{ title }}{% else %}Default{% endif %}{% endblock %}
+
+{% block body %}
+		<h1>{{ title }}</h1>
+		{{ body }}
+{% endblock %}

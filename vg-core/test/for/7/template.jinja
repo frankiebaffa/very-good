@@ -1,0 +1,5 @@
+{% for item in "./items" -%}
+	{% for another in "./items2" -%}
+		{% if !loop.first %}Not first{% endif %}
+	{%- endfor %}
+{%- endfor %}
