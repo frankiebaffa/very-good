@@ -1,0 +1,1 @@
+{% for item in "./items" | !modified %}{% if !loop.first %} {% endif %}{{ item }}{% endfor %}

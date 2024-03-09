@@ -37,6 +37,7 @@ use std::{
         Path,
         PathBuf,
     },
+    time::SystemTime,
 };
 
 const TAG: [&str; 2] = [
@@ -455,6 +456,29 @@ fn handle_trim(s: &mut String, trim_start: bool, trim_end: bool) {
     }
 }
 
+struct ForItem {
+    path: PathBuf,
+    name: String,
+    created: SystemTime,
+    modified: SystemTime,
+}
+
+const SORTS: [&str; 3] = [
+    "name",
+    "created",
+    "modified"
+];
+
+fn starts_with_sort(s: &str) -> Option<String> {
+    for method in SORTS {
+        if s.starts_with(method) {
+            return Some(method.to_owned());
+        }
+    }
+
+    return None;
+}
+
 /// A vg error.
 #[derive(Debug)]
 pub enum Error {
@@ -568,6 +592,10 @@ impl Parser {
 
     fn starts_with_valid_var_name_char(&self) -> bool {
         starts_with_valid_var_name_char(self.source())
+    }
+
+    fn starts_with_sort(&self) -> Option<String> {
+        starts_with_sort(self.source())
     }
 
     fn trim_start_into(&mut self, into: &mut String) {
@@ -1017,8 +1045,27 @@ impl Parser {
         }
 
         self.advance_into(PATH.len(), &mut context.holding);
-
         self.trim_start_into(&mut context.holding);
+
+        let (sort, reverse) = if self.starts_with(PIPE) {
+            self.advance_into(PIPE.len(), &mut context.holding);
+            self.trim_start_into(&mut context.holding);
+
+            let reverse = self.starts_with("!");
+            if reverse {
+                self.advance_into(1, &mut context.holding);
+            }
+
+            if let Some(s) = self.starts_with_sort() {
+                self.advance_into(s.len(), &mut context.holding);
+                self.trim_start_into(&mut context.holding);
+                (s, reverse)
+            } else {
+                return Ok(false);
+            }
+        } else {
+            (SORTS[0].to_owned(), false)
+        };
 
         context.trim_start = self.starts_with("-");
 
@@ -1052,9 +1099,18 @@ impl Parser {
                             continue;
                         }
 
-                        let name = path.file_name().unwrap().to_str().unwrap();
+                        let name = path.file_name().unwrap().to_str().unwrap().to_owned();
 
-                        items.push((name.to_owned(), path));
+                        let metadata = path.metadata().map_err(|e| Error::IOError(e))?;
+                        let created = metadata.created().map_err(|e| Error::IOError(e))?;
+                        let modified = metadata.modified().map_err(|e| Error::IOError(e))?;
+
+                        items.push(ForItem {
+                            path,
+                            name,
+                            created,
+                            modified,
+                        });
 
                         // mark as loop to set loop context implementations
                         if !is_loop {
@@ -1062,10 +1118,19 @@ impl Parser {
                         }
                     }
 
-                    items.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+                    match sort.as_str() {
+                        "name" => items.sort_unstable_by(|a, b| a.name.cmp(&b.name)),
+                        "created" => items.sort_unstable_by(|a, b| a.created.cmp(&b.created)),
+                        "modified" => items.sort_unstable_by(|a, b| a.modified.cmp(&b.modified)),
+                        _ => panic!("HOW!?"),
+                    }
+
+                    if reverse {
+                        items.reverse();
+                    }
 
                     items.into_iter()
-                        .map(|i| i.1)
+                        .map(|i| i.path)
                         .collect::<Vec<PathBuf>>()
                 },
                 Err(_) => Vec::new(),

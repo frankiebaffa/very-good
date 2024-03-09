@@ -458,6 +458,90 @@ fn for_7() {
 }
 
 #[test]
+fn for_8_created() {
+    let output = Parser::compile(
+        "./test/for/8",
+        "./test/for/8/by_created.jinja"
+    ).unwrap();
+
+    let against = include_str!("../test/for/8/against.jinja");
+
+    assert_eq!(against[0..against.len()-1], output);
+}
+
+#[test]
+fn for_8_created_reverse() {
+    let output = Parser::compile(
+        "./test/for/8",
+        "./test/for/8/by_created_reverse.jinja"
+    ).unwrap();
+
+    let against = include_str!("../test/for/8/against_reverse.jinja");
+
+    assert_eq!(against[0..against.len()-1], output);
+}
+
+#[test]
+fn for_8_modified() {
+    let output = Parser::compile(
+        "./test/for/8",
+        "./test/for/8/by_modified.jinja"
+    ).unwrap();
+
+    let against = include_str!("../test/for/8/against.jinja");
+
+    assert_eq!(against[0..against.len()-1], output);
+}
+
+#[test]
+fn for_8_modified_reverse() {
+    let output = Parser::compile(
+        "./test/for/8",
+        "./test/for/8/by_modified_reverse.jinja"
+    ).unwrap();
+
+    let against = include_str!("../test/for/8/against_reverse.jinja");
+
+    assert_eq!(against[0..against.len()-1], output);
+}
+
+#[test]
+fn for_8_name_default() {
+    let output = Parser::compile(
+        "./test/for/8",
+        "./test/for/8/by_name_default.jinja"
+    ).unwrap();
+
+    let against = include_str!("../test/for/8/against_reverse.jinja");
+
+    assert_eq!(against[0..against.len()-1], output);
+}
+
+#[test]
+fn for_8_name() {
+    let output = Parser::compile(
+        "./test/for/8",
+        "./test/for/8/by_name.jinja"
+    ).unwrap();
+
+    let against = include_str!("../test/for/8/against_reverse.jinja");
+
+    assert_eq!(against[0..against.len()-1], output);
+}
+
+#[test]
+fn for_8_name_reverse() {
+    let output = Parser::compile(
+        "./test/for/8",
+        "./test/for/8/by_name_reverse.jinja"
+    ).unwrap();
+
+    let against = include_str!("../test/for/8/against.jinja");
+
+    assert_eq!(against[0..against.len()-1], output);
+}
+
+#[test]
 fn extends_1() {
     let output = Parser::compile(
         "./test/extends/1",
