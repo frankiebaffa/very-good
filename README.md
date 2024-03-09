@@ -1,4 +1,4 @@
-![very good logo](https://github.com/frankiebaffa/very-good/blob/logos/resources/vg-dark.jpg?raw=true)
+![very good logo](https://github.com/frankiebaffa/very-good/blob/logos/resources/vg-banner-dark.jpg?raw=true)
 
 # Very Good Templating Engine
 
