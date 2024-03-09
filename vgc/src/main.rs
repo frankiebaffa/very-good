@@ -38,7 +38,7 @@ struct Options {
     /// Variable implementations to pass through the parser (key:value).
     #[arg(short, long="implementation", value_name="IMPLEMENTATION")]
     implementations: Option<Vec<String>>,
-    /// Faux pages to add to the cache (path:content).
+    /// Faux pages to add to the cache (path-to-file:content).
     #[arg(short, long="cached", value_name="CACHED")]
     cached_items: Option<Vec<String>>,
     /// Print the license notice.

@@ -44,7 +44,7 @@ struct Options {
     /// Globally includes an implementation for a variable (key:value).
     #[arg(short, long)]
     implementation: Option<Vec<String>>,
-    /// Faux pages to add to the cache (path-from-root:content).
+    /// Faux pages to add to the cache (path-to-file:content).
     #[arg(short='m', long="cached", value_name="CACHED")]
     cached_items: Option<Vec<String>>,
     /// Disable cache.
