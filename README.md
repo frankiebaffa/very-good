@@ -1,3 +1,5 @@
+![very good logo]("./resources/vg-dark.jpg)
+
 # Very Good Templating Engine
 
 File-system-based Jinja-like templating.
