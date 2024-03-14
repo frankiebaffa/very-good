@@ -30,8 +30,8 @@ use {
     vg_core::{ Error, FileCache, Parser, Result, },
 };
 
-const LICENSE_NOTICE: &'static str = include_str!("../../NOTICE-GPL");
-const LICENSE_FULL: &'static str = include_str!("../../LICENSE-GPL");
+const LICENSE_NOTICE: &str = include_str!("../../NOTICE-GPL");
+const LICENSE_FULL: &str = include_str!("../../LICENSE-GPL");
 
 /// Very Good Templating Engine Deployer - Bulk compile, copy, and deploy vg templates
 /// and files.
@@ -168,7 +168,7 @@ fn copy_all_to(src: PathBuf, dst: PathBuf, src_ext: &Option<String>) {
             let filename = path.file_name().unwrap().to_str().unwrap();
             let mut filepath = dst.clone();
             filepath.push(filename);
-            copy_all_to(path, filepath, &src_ext);
+            copy_all_to(path, filepath, src_ext);
         } else {
             continue;
         }
@@ -194,7 +194,7 @@ fn main() -> Result<()> {
         .map(|v| {
             v.into_iter()
                 .map(|v| {
-                    let mut split = v.splitn(2, ":");
+                    let mut split = v.splitn(2, ':');
                     let k = split.next().unwrap();
                     let v = split.next().unwrap_or("");
                     (k.to_owned(), v.to_owned())
@@ -206,7 +206,7 @@ fn main() -> Result<()> {
     let cached_items = match cached_items {
         Some(ii) => ii.into_iter()
             .map(|i| {
-                let mut kv_split = i.splitn(2, ":");
+                let mut kv_split = i.splitn(2, ':');
                 let k = kv_split.next().unwrap_or("");
                 let p = PathBuf::from(k);
                 let mut b = p.clone();
@@ -313,7 +313,7 @@ fn main() -> Result<()> {
     let n = benchmark.unwrap_or(1);
 
     for _ in 0..n {
-        let mut actions = config.actions.clone().into_iter();
+        let actions = config.actions.clone().into_iter();
         let mut dur = Duration::ZERO;
         let mut cache = if no_cache {
             FileCache::disabled()
@@ -326,7 +326,7 @@ fn main() -> Result<()> {
             cache.insert(path, content);
         });
 
-        while let Some(action) = actions.next() {
+        for action in actions {
             match action {
                 Action::CompileFile(opts) => {
                     vprintln!(
@@ -525,7 +525,7 @@ fn main() -> Result<()> {
         }
 
         if timing {
-            let seconds = dur.as_nanos() as f64 / 1000000000 as f64;
+            let seconds = dur.as_nanos() as f64 / 1000000000_f64;
             benches.push(seconds);
         }
 
@@ -568,9 +568,7 @@ fn main() -> Result<()> {
     }
 
     if cache_info && cache_details.is_some() && !no_cache {
-        if did_bench {
-            println!("");
-        }
+        let pre = if did_bench { "\n" } else { "" };
 
         let details = cache_details.unwrap();
         let padding = details.iter()
@@ -583,7 +581,7 @@ fn main() -> Result<()> {
             let path = format!("{:?}", detail.0);
             let hits = detail.1;
 
-            println!("{path:<padding$}: {hits}");
+            println!("{pre}{path:<padding$}: {hits}");
         }
     }
 

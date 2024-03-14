@@ -25,8 +25,8 @@ use {
     },
 };
 
-const LICENSE_NOTICE: &'static str = include_str!("../../NOTICE-GPL");
-const LICENSE_FULL: &'static str = include_str!("../../LICENSE-GPL");
+const LICENSE_NOTICE: &str = include_str!("../../NOTICE-GPL");
+const LICENSE_FULL: &str = include_str!("../../LICENSE-GPL");
 
 /// Very Good Templating Engine Compiler - Compile vg templates.
 #[derive(ClapParser, Debug)]
@@ -70,7 +70,7 @@ fn main() -> Result<()> {
     let implementations = match implementations {
         Some(ii) => ii.into_iter()
             .map(|i| {
-                let mut kv_split = i.splitn(2, ":");
+                let mut kv_split = i.splitn(2, ':');
                 let k = kv_split.next().unwrap_or("");
                 let v = kv_split.next().unwrap_or("");
                 (k.to_owned(), v.to_owned())
@@ -82,24 +82,21 @@ fn main() -> Result<()> {
     let output = if !no_cache {
         let mut cache = FileCache::enabled();
 
-        match cached_items {
-            Some(ii) => {
-                for i in ii.into_iter() {
-                    let mut kv_split = i.splitn(2, ":");
-                    let k = kv_split.next().unwrap_or("");
-                    let p = PathBuf::from(k);
-                    let mut b = p.clone();
-                    if b.is_file() {
-                        b.pop();
-                    }
-
-                    let v = kv_split.next().unwrap_or("");
-                    let path = FileCache::rebase_path(&root, b, p);
-                    cache.insert(path, v.to_owned());
+        if let Some(ii) = cached_items {
+            for i in ii.into_iter() {
+                let mut kv_split = i.splitn(2, ':');
+                let k = kv_split.next().unwrap_or("");
+                let p = PathBuf::from(k);
+                let mut b = p.clone();
+                if b.is_file() {
+                    b.pop();
                 }
-            },
-            None => {},
-        };
+
+                let v = kv_split.next().unwrap_or("");
+                let path = FileCache::rebase_path(&root, b, p);
+                cache.insert(path, v.to_owned());
+            }
+        }
 
         Parser::compile_implemented_with_cache(&root, &target, implementations, &mut cache)?
     } else {

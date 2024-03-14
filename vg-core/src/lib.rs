@@ -62,9 +62,9 @@ const CURLY_ESCAPE: [&str; 2] = [
     "\\}",
 ];
 
-const PERC_ESCAPE: &'static str = "\\%";
+const PERC_ESCAPE: &str = "\\%";
 
-const HASH_ESCAPE: &'static str = "\\#";
+const HASH_ESCAPE: &str = "\\#";
 
 const KEYWORDS: [&str; 10] = [
     "else",
@@ -86,10 +86,10 @@ fn starts_with_keyword(s: &str) -> Option<String> {
         }
     }
 
-    return None;
+    None
 }
 
-const PIPE: &'static str = "|";
+const PIPE: &str = "|";
 
 const FILTERS: [&str; 6] = [
     "flatten",
@@ -116,7 +116,7 @@ fn starts_with_filter(s: &str) -> Option<String> {
         }
     }
 
-    return None;
+    None
 }
 
 #[derive(Debug)]
@@ -245,8 +245,8 @@ impl FileCache {
             return Err(Error::NotAFileError(path.into()));
         }
 
-        let mut file = OpenOptions::new().read(true).open(&path)
-            .map_err(|e| Error::IOError(e))?;
+        let mut file = OpenOptions::new().read(true).open(path)
+            .map_err(Error::IOError)?;
         let mut source = String::new();
         let br = BufReader::new(&mut file);
         let mut lines = br.lines();
@@ -323,7 +323,7 @@ impl FileCache {
         if path.is_absolute() {
             let mut root: PathBuf = root.as_ref().into();
             let path: PathBuf = path.into();
-            let mut p_iter = path.into_iter();
+            let mut p_iter = path.iter();
 
             p_iter.next(); // consume root directory
 
@@ -347,18 +347,18 @@ enum Condition {
     Emptiness,
 }
 
-fn starts_with_valid_var_name_char<'a>(s: &'a str) -> bool {
+fn starts_with_valid_var_name_char(s: &str) -> bool {
     let c = &s[0..1];
 
-    match c {
+    matches!(
+        c,
         "a"|"b"|"c"|"d"|"e"|"f"|"g"|"h"|"i"|"j"|"k"|"l"|"m"|"n"|"o"|"p"|"q"|"r"|
         "s"|"t"|"u"|"v"|"w"|"x"|"y"|"z"|
         "A"|"B"|"C"|"D"|"E"|"F"|"G"|"H"|"I"|"J"|"K"|"L"|"M"|"N"|"O"|"P"|"Q"|"R"|
         "S"|"T"|"U"|"V"|"W"|"X"|"Y"|"Z"|
         "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"|
-        "_"|"-"|"." => true,
-        _ => false,
-    }
+        "_"|"-"|"."
+    )
 }
 
 #[derive(Debug)]
@@ -476,7 +476,7 @@ fn starts_with_sort(s: &str) -> Option<String> {
         }
     }
 
-    return None;
+    None
 }
 
 /// A vg error.
@@ -543,7 +543,7 @@ impl Parser {
 
         let path = p.as_ref();
 
-        let source = cache.get(&path)?;
+        let source = cache.get(path)?;
 
         let mut base_dir: PathBuf = path.into();
         base_dir.pop();
@@ -582,7 +582,7 @@ impl Parser {
         self.advance(n);
     }
 
-    fn starts_with<'a>(&self, s: &'a str) -> bool {
+    fn starts_with(&self, s: &str) -> bool {
         self.source().starts_with(s)
     }
 
@@ -648,8 +648,8 @@ impl Parser {
             self.advance_into(1, &mut context.holding);
         }
 
-        let start_dot = name.starts_with(".");
-        let end_dot = name.ends_with(".");
+        let start_dot = name.starts_with('.');
+        let end_dot = name.ends_with('.');
 
         if start_dot || end_dot {
             return false;
@@ -673,7 +673,7 @@ impl Parser {
             self.advance_into(1, &mut context.holding);
             self.trim_start_into(&mut context.holding);
 
-            if let Some(filter) = starts_with_filter(&self.source()) {
+            if let Some(filter) = starts_with_filter(self.source()) {
                 let filter = filter.as_str();
 
                 match filter {
@@ -757,9 +757,9 @@ impl Parser {
             Some(mut i) => {
                 filters.into_iter().for_each(|f| {
                     match f {
-                        Filter::Flatten => i = i.replace("\n", " "),
+                        Filter::Flatten => i = i.replace('\n', " "),
                         Filter::Trim => i = i.trim().to_owned(),
-                        Filter::Detab => i = i.replace("\t", ""),
+                        Filter::Detab => i = i.replace('\t', ""),
                         Filter::Upper => i = i.to_uppercase(),
                         Filter::Lower => i = i.to_lowercase(),
                         Filter::Replace(this, with) => i = i.replace(&this, &with),
@@ -886,7 +886,7 @@ impl Parser {
         self.trim_start_into(&mut context.holding);
 
         // handle as
-        const AS: &'static str = "as";
+        const AS: &str = "as";
 
         let mut as_name = String::new();
 
@@ -918,22 +918,12 @@ impl Parser {
         // if as name is empty
         let mut this_prefix = if as_name.is_empty() {
             // then use the existing prefix
-            match &context.prefix {
-                Some(prefix) => {
-                    Some(prefix.to_owned())
-                },
-                None => None,
-            }
+            context.prefix.as_ref().map(|p| p.to_owned())
         } else {
             // if as name is not empty, combine with existing prefixing
-            match &context.prefix {
-                Some(prefix) => {
-                    Some(format!("{prefix}.{as_name}"))
-                },
-                None => {
-                    Some(as_name)
-                },
-            }
+            context.prefix.as_ref()
+                .map(|p| format!("{p}.{as_name}"))
+                .or(Some(as_name))
         };
 
         // set prefix for includes
@@ -1005,7 +995,7 @@ impl Parser {
 
         self.trim_start_into(&mut context.holding);
 
-        const IN: &'static str = "in";
+        const IN: &str = "in";
 
         // next value should be "in"
         if !self.starts_with(IN) {
@@ -1101,9 +1091,9 @@ impl Parser {
 
                         let name = path.file_name().unwrap().to_str().unwrap().to_owned();
 
-                        let metadata = path.metadata().map_err(|e| Error::IOError(e))?;
-                        let created = metadata.created().map_err(|e| Error::IOError(e))?;
-                        let modified = metadata.modified().map_err(|e| Error::IOError(e))?;
+                        let metadata = path.metadata().map_err(Error::IOError)?;
+                        let created = metadata.created().map_err(Error::IOError)?;
+                        let modified = metadata.modified().map_err(Error::IOError)?;
 
                         items.push(ForItem {
                             path,
@@ -1350,8 +1340,8 @@ impl Parser {
 
         self.trim_start_into(&mut context.holding);
 
-        const EMPTY: &'static str = "empty";
-        const NOT: &'static str = "not";
+        const EMPTY: &str = "empty";
+        const NOT: &str = "not";
 
         // check for non-default condition
         let neg_cdn_opt = if self.starts_with(NOT) {
@@ -1372,9 +1362,9 @@ impl Parser {
             Some((false, Condition::Existence))
         };
 
-        let start_dot = variable.starts_with(".");
-        let end_dot = variable.ends_with(".");
-        let invalid_excl = match variable.find("!") {
+        let start_dot = variable.starts_with('.');
+        let end_dot = variable.ends_with('.');
+        let invalid_excl = match variable.find('!') {
             Some(i) => i != 0,
             None => false,
         };
@@ -1404,15 +1394,15 @@ impl Parser {
 
         self.advance_into(TAG[1].len(), &mut context.holding);
 
-        let this_neg = variable.starts_with("!");
+        let this_neg = variable.starts_with('!');
 
         if this_neg {
-            variable = (&variable[1..]).to_owned();
+            variable = variable[1..].to_owned();
             negative = !negative;
         }
 
         // can't have any other ! characters
-        if variable.find("!").is_some() || variable.starts_with(".") {
+        if variable.find('!').is_some() || variable.starts_with('.') {
             return Ok(false);
         }
 
@@ -1476,10 +1466,10 @@ impl Parser {
                         context.clear_holding();
                         context.flip_first();
 
-                        return Ok(true);
+                        Ok(true)
                     },
                     _ => {
-                        return Ok(false);
+                        Ok(false)
                     },
                 }
             },
@@ -1512,10 +1502,10 @@ impl Parser {
                 context.clear_holding();
                 context.flip_first();
 
-                return Ok(true);
+                Ok(true)
             },
             _ => {
-                return Ok(false);
+                Ok(false)
             },
         }
     }
@@ -1567,10 +1557,10 @@ impl Parser {
                 context.clear_holding();
                 context.flip_first();
 
-                return Ok(true);
+                Ok(true)
             },
             _ => {
-                return Ok(false);
+                Ok(false)
             },
         }
     }
@@ -1609,11 +1599,10 @@ impl Parser {
 
     fn parse(&mut self, context: &mut Context, cache: &mut FileCache) -> Result<()> {
         while !self.source().is_empty() {
-            if self.starts_with(COMMENT[0]) && self.comment() {
-                continue;
-            } else if self.starts_with(VARIABLE[0]) && self.variable(context) {
-                continue;
-            } else if self.escaped(context) {
+            if self.starts_with(COMMENT[0]) && self.comment() ||
+                self.starts_with(VARIABLE[0]) && self.variable(context) ||
+                self.escaped(context)
+            {
                 continue;
             } else if self.starts_with(TAG[0]) {
                 context.flush_holding();
@@ -1628,31 +1617,26 @@ impl Parser {
 
                 self.trim_start_into(&mut context.holding);
 
-                if let Some(keyword) = starts_with_keyword(&self.source()) {
+                if let Some(keyword) = starts_with_keyword(self.source()) {
                     self.advance_into(keyword.len(), &mut context.holding);
 
                     self.trim_start_into(&mut context.holding);
 
                     match keyword.as_str() {
-                        "endif" => match context.nested_within_keyword.as_str() {
-                            "if" => if self.end_tag("endif", context) {
-                                return Ok(());
-                            },
-                            _ => {},
-                        },
-                        "endfor" => match context.nested_within_keyword.as_str() {
-                            "for" => if self.end_tag("endfor", context) {
-                                return Ok(());
-                            },
-                            _ => {},
-                        },
-                        "endblock" => match context.nested_within_keyword
-                            .as_str()
+                        "endif" => if context.nested_within_keyword.eq("if") &&
+                            self.end_tag("endif", context)
                         {
-                            "block" => if self.end_tag("endblock", context) {
-                                return Ok(());
-                            },
-                            _ => {},
+                            return Ok(());
+                        },
+                        "endfor" => if context.nested_within_keyword.eq("for") &&
+                            self.end_tag("endfor", context)
+                        {
+                            return Ok(());
+                        },
+                        "endblock" => if context.nested_within_keyword.eq("block") &&
+                            self.end_tag("endblock", context)
+                        {
+                            return Ok(());
                         },
                         "else" => match context.nested_within_keyword.as_str() {
                             "if"|"for" => if self.end_tag("else", context) {
@@ -1699,8 +1683,8 @@ impl Parser {
         context.flip_first();
 
         if !context.holding.is_empty() {
-            if context.holding.ends_with("\n") {
-                context.holding = (&context.holding[0..context.holding.len() - 1]).to_owned();
+            if context.holding.ends_with('\n') {
+                context.holding = context.holding[0..context.holding.len() - 1].to_owned();
             }
 
             if !context.holding.is_empty() {
@@ -1712,23 +1696,20 @@ impl Parser {
 
         std::mem::swap(&mut context.extends, &mut extends);
 
-        match extends {
-            Some(extends) => {
-                let mut extends_parser = Self::from_file(&self.root_dir, extends, cache)?;
+        if let Some(extends) = extends {
+            let mut extends_parser = Self::from_file(&self.root_dir, extends, cache)?;
 
-                // prep context
-                context.directory = extends_parser.base_dir.clone();
-                context.is_first = true;
-                context.trim_start = false;
-                context.trim_end = false;
-                context.was_extends = false;
-                context.output.clear();
+            // prep context
+            context.directory = extends_parser.base_dir.clone();
+            context.is_first = true;
+            context.trim_start = false;
+            context.trim_end = false;
+            context.was_extends = false;
+            context.output.clear();
 
-                extends_parser.parse(context, cache)?;
+            extends_parser.parse(context, cache)?;
 
-                std::mem::swap(&mut extends_parser, self);
-            },
-            None => {},
+            std::mem::swap(&mut extends_parser, self);
         }
 
         Ok(())
