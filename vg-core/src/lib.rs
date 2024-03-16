@@ -944,6 +944,11 @@ impl Parser {
                     e => return Err(e),
                 },
             };
+
+            // include raw was valid
+            context.clear_holding();
+            context.flip_first();
+            return Ok(true);
         }
 
         // if as name is empty

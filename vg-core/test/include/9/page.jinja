@@ -1,0 +1,5 @@
+{% extends "./template.jinja" %}
+
+{% block something -%}
+	{% block md %}{% include raw "./include.md" %}{% endblock %}{{ md | md }}
+{%- endblock %}
