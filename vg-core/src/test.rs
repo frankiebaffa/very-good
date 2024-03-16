@@ -374,6 +374,30 @@ fn include_6() {
 }
 
 #[test]
+fn include_7() {
+    let output = Parser::compile(
+        "./test/include/7",
+        "./test/include/7/template.jinja",
+    ).unwrap();
+
+    let against = include_str!("../test/include/7/against.jinja");
+
+    assert_eq!(&against[0..against.len()-1], output);
+}
+
+#[test]
+fn include_8() {
+    let output = Parser::compile(
+        "./test/include/8",
+        "./test/include/8/page.jinja",
+    ).unwrap();
+
+    let against = include_str!("../test/include/8/against.jinja");
+
+    assert_eq!(&against[0..against.len()-1], output);
+}
+
+#[test]
 fn for_1() {
     let output = Parser::compile(
         "./test/for/1",

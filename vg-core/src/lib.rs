@@ -853,6 +853,15 @@ impl Parser {
     }
 
     fn include(&mut self, context: &mut Context, cache: &mut FileCache) -> Result<bool> {
+        // can be included raw
+        let is_raw = if self.starts_with("raw") {
+            self.advance_into(3, &mut context.holding);
+            self.trim_start_into(&mut context.holding);
+            true
+        } else {
+            false
+        };
+
         // this keyword accepts a path value
         if !self.starts_with(PATH) {
             return Ok(false);
@@ -915,6 +924,21 @@ impl Parser {
 
         self.advance_into(TAG[1].len(), &mut context.holding);
 
+        let rebased = FileCache::rebase_path(&self.root_dir, &self.base_dir, &path);
+
+        // include content directly into output
+        if is_raw {
+            match cache.get(&rebased) {
+                Ok(c) => {
+                    context.push_output(&c);
+                },
+                Err(e) => match e {
+                    Error::IsIgnored => {},
+                    e => return Err(e),
+                },
+            };
+        }
+
         // if as name is empty
         let mut this_prefix = if as_name.is_empty() {
             // then use the existing prefix
@@ -929,10 +953,8 @@ impl Parser {
         // set prefix for includes
         std::mem::swap(&mut context.prefix, &mut this_prefix);
 
-        // include gets tokenized here and
-        // the raw tokens are included in the
+        // include gets tokenized here and the raw tokens are included in the
         // output
-        let rebased = FileCache::rebase_path(&self.root_dir, &self.base_dir, &path);
         let mut include_parser = Self::from_file(&self.root_dir, &rebased, cache)?;
 
         // give context the same base directory as the new parser
