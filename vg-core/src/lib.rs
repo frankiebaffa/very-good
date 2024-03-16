@@ -19,25 +19,28 @@
 #[cfg(test)]
 mod test;
 
-use std::{
-    collections::HashMap,
-    error::Error as StdError,
-    fmt::{
-        Display,
-        Formatter,
-        Result as FmtResult,
+use {
+    std::{
+        collections::HashMap,
+        error::Error as StdError,
+        fmt::{
+            Display,
+            Formatter,
+            Result as FmtResult,
+        },
+        fs::OpenOptions,
+        io::{
+            Error as IOError,
+            BufReader,
+            BufRead,
+        },
+        path::{
+            Path,
+            PathBuf,
+        },
+        time::SystemTime,
     },
-    fs::OpenOptions,
-    io::{
-        Error as IOError,
-        BufReader,
-        BufRead,
-    },
-    path::{
-        Path,
-        PathBuf,
-    },
-    time::SystemTime,
+    nfm_core::Parser as NfmParser,
 };
 
 const TAG: [&str; 2] = [
@@ -91,13 +94,14 @@ fn starts_with_keyword(s: &str) -> Option<String> {
 
 const PIPE: &str = "|";
 
-const FILTERS: [&str; 6] = [
+const FILTERS: [&str; 7] = [
     "flatten",
     "trim",
     "detab",
     "replace",
     "lower",
     "upper",
+    "md",
 ];
 
 enum Filter {
@@ -107,6 +111,7 @@ enum Filter {
     Replace(String, String),
     Lower,
     Upper,
+    Markdown,
 }
 
 fn starts_with_filter(s: &str) -> Option<String> {
@@ -685,6 +690,7 @@ impl Parser {
                     "replace" => {
                         do_replace = true;
                     },
+                    "md" => filters.push(Filter::Markdown),
                     _ => return false,
                 }
 
@@ -763,6 +769,7 @@ impl Parser {
                         Filter::Upper => i = i.to_uppercase(),
                         Filter::Lower => i = i.to_lowercase(),
                         Filter::Replace(this, with) => i = i.replace(&this, &with),
+                        Filter::Markdown => i = NfmParser::parse_str(&i),
                     }
                 });
 

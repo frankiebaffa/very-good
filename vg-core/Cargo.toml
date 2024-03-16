@@ -27,5 +27,5 @@ harness = false
 name = "bench_5"
 harness = false
 
-[dependencies]
-
+[dependencies.nfm-core]
+path = "../lib/nfm/nfm-core"

@@ -1,0 +1,3 @@
+[submodule "lib/nfm"]
+	path = lib/nfm
+	url = https://github.com/frankiebaffa/nfm
