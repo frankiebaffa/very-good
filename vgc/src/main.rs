@@ -17,86 +17,113 @@
 //! A single-file compiler built on the Very Good Templating Engine
 
 use {
-    clap::Parser as ClapParser,
-    vg_core::{ FileCache, Parser, Result, },
+    args::{ Arguments, OptionType, },
+    vg_core::{ FileCache, Parser, Error, Result, },
     std::{
         collections::HashMap,
+        io::{ Error as IOError, ErrorKind, },
         path::PathBuf,
     },
 };
 
+const HELP: &str = include_str!("../resources/help.txt");
 const LICENSE_NOTICE: &str = include_str!("../../NOTICE-GPL");
 const LICENSE_FULL: &str = include_str!("../../LICENSE-GPL");
 
-/// Very Good Templating Engine Compiler - Compile vg templates.
-#[derive(ClapParser, Debug)]
-#[command(version, about, long_about = None)]
+#[derive(Default)]
 struct Options {
-    /// Disable caching.
-    #[arg(short, long)]
     no_cache: bool,
-    /// Variable implementations to pass through the parser (key:value).
-    #[arg(short, long="implementation", value_name="IMPLEMENTATION")]
-    implementations: Option<Vec<String>>,
-    /// Faux pages to add to the cache (path-to-file:content).
-    #[arg(short, long="cached", value_name="CACHED")]
-    cached_items: Option<Vec<String>>,
-    /// Print the license notice.
-    #[arg(short='l')]
-    license_notice: bool,
-    /// Print the license in full.
-    #[arg(short='L')]
-    license_full: bool,
-    /// The path to the root directory.
-    root: PathBuf,
-    /// The path to a vg template.
-    target: PathBuf,
+    implementations: Vec<String>,
+    cached_items: Vec<String>,
+    root: Option<PathBuf>,
+    target: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {
+    let mut opts = Options::default();
+    Arguments::with_args(&mut opts, |args, opts, arg| {
+        match arg.option_type() {
+            OptionType::Argument(_) => match arg.qualifier() {
+                "h"|"help" => {
+                    println!("{HELP}");
+                    std::process::exit(0);
+                },
+                "n"|"no-cache" => opts.no_cache = true,
+                "i"|"implementation" => {
+                    opts.implementations.push(args.enforce_next_value(&arg)?);
+                },
+                "c"|"--cached" => {
+                    opts.cached_items.push(args.enforce_next_value(&arg)?);
+                },
+                "l"|"license-notice" => {
+                    println!("{LICENSE_NOTICE}");
+                    std::process::exit(0);
+                },
+                "L"|"license-full" => {
+                    println!("{LICENSE_FULL}");
+                    std::process::exit(0);
+                },
+                c => {
+                    return Err(IOError::new(
+                        ErrorKind::Other,
+                        format!("{c} is not a valid argument."),
+                    ));
+                },
+            },
+            OptionType::Value(_) => if arg.is_n_from_last(1) {
+                opts.root = Some(PathBuf::from(arg.qualifier()));
+            } else if arg.is_last() {
+                opts.target = Some(PathBuf::from(arg.qualifier()));
+            },
+        }
+        Ok(())
+    }).map_err(|e| Error::IOError(e))?;
+
     let Options {
-        root, target, implementations, no_cache, cached_items, license_notice,
-        license_full
-    } = Options::parse();
+        root, target, implementations, no_cache, cached_items
+    } = opts;
 
-    if license_full {
-        println!("{LICENSE_FULL}");
-        return Ok(());
-    } else if license_notice {
-        println!("{LICENSE_NOTICE}");
-        return Ok(());
-    }
+    let root = root.map_or(
+        Err(Error::IOError(IOError::new(
+            ErrorKind::Other,
+            "-r|--root must be defined.".to_owned(),
+        ))),
+        |v| Ok(v)
+    )?;
 
-    let implementations = match implementations {
-        Some(ii) => ii.into_iter()
-            .map(|i| {
-                let mut kv_split = i.splitn(2, ':');
-                let k = kv_split.next().unwrap_or("");
-                let v = kv_split.next().unwrap_or("");
-                (k.to_owned(), v.to_owned())
-            })
-            .collect::<HashMap<String, String>>(),
-        None => HashMap::new(),
-    };
+    let target = target.map_or(
+        Err(Error::IOError(IOError::new(
+            ErrorKind::Other,
+            "-r|--root must be defined.".to_owned(),
+        ))),
+        |v| Ok(v)
+    )?;
+
+    let implementations = implementations.into_iter()
+        .map(|i| {
+            let mut kv_split = i.splitn(2, ':');
+            let k = kv_split.next().unwrap_or("");
+            let v = kv_split.next().unwrap_or("");
+            (k.to_owned(), v.to_owned())
+        })
+        .collect::<HashMap<String, String>>();
 
     let output = if !no_cache {
         let mut cache = FileCache::enabled();
 
-        if let Some(ii) = cached_items {
-            for i in ii.into_iter() {
-                let mut kv_split = i.splitn(2, ':');
-                let k = kv_split.next().unwrap_or("");
-                let p = PathBuf::from(k);
-                let mut b = p.clone();
-                if b.is_file() {
-                    b.pop();
-                }
-
-                let v = kv_split.next().unwrap_or("");
-                let path = FileCache::rebase_path(&root, b, p);
-                cache.insert(path, v.to_owned());
+        cached_items.into_iter().for_each(|c| {
+            let mut kv_split = c.splitn(2, ':');
+            let k = kv_split.next().unwrap_or("");
+            let p = PathBuf::from(k);
+            let mut b = p.clone();
+            if b.is_file() {
+                b.pop();
             }
-        }
+
+            let v = kv_split.next().unwrap_or("");
+            let path = FileCache::rebase_path(&root, b, p);
+            cache.insert(path, v.to_owned());
+        });
 
         Parser::compile_implemented_with_cache(&root, &target, implementations, &mut cache)?
     } else {

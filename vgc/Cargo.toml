@@ -1,11 +1,10 @@
 [package]
 name = "vgc"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 
 [dependencies.vg-core]
 path = "../vg-core"
 
-[dependencies.clap]
-version = "4.5.1"
-features = [ "derive" ]
+[dependencies.args]
+path = "../lib/args-rs"

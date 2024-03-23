@@ -1,0 +1,12 @@
+Very Good Templating Engine Compiler - Compile vg templates
+
+Usage: vgc [ARGUMENTS] <ROOT> <TARGET>
+
+Arguments:
+    -n    --no-cache              Disable caching functionality.
+    -i    --implementation <IMPL> Include an implementation of a variable.
+    -c    --cached         <ITEM> Include a template in cache.
+
+Values:
+    ROOT                          The root directory to use for absolute paths.
+    TARGET                        The path of the template to compile.

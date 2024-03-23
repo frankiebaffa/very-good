@@ -17,61 +17,34 @@
 //! A multi-file compiler/copier built on the Very Good Templating Engine.
 
 use {
-    clap::Parser as ClapParser,
+    args::{ Arguments, OptionType, },
     serde::{ Deserialize, Serialize, },
     std::{
         collections::HashMap,
         env,
         fs::{ OpenOptions, create_dir_all, copy, remove_file, },
-        io::{ Read, Write, },
+        io::{ Error as IOError, ErrorKind, Read, Write, },
         path::PathBuf,
         time::{ Duration, Instant, },
     },
     vg_core::{ Error, FileCache, Parser, Result, },
 };
 
+const HELP: &str = include_str!("../resources/help.txt");
 const LICENSE_NOTICE: &str = include_str!("../../NOTICE-GPL");
 const LICENSE_FULL: &str = include_str!("../../LICENSE-GPL");
 
-/// Very Good Templating Engine Deployer - Bulk compile, copy, and deploy vg templates
-/// and files.
-#[derive(ClapParser)]
-#[command(version, about, long_about = None)]
+#[derive(Default)]
 struct Options {
-    /// Show an example configuration.
-    #[arg(short, long)]
     example_config: bool,
-    /// Globally includes an implementation for a variable (key:value).
-    #[arg(short, long)]
-    implementation: Option<Vec<String>>,
-    /// Faux pages to add to the cache (path-to-file:content).
-    #[arg(short='m', long="cached", value_name="CACHED")]
-    cached_items: Option<Vec<String>>,
-    /// Disable cache.
-    #[arg(short, long)]
+    implementations: Vec<String>,
+    cached_items: Vec<String>,
     no_cache: bool,
-    /// Only read the file for means of validation, do not act.
-    #[arg(short, long)]
     read_only: bool,
-    /// Include timing information.
-    #[arg(short, long)]
     timing: bool,
-    /// Include benchmark information over n runs.
-    #[arg(short, long)]
     benchmark: Option<usize>,
-    /// Include caching information.
-    #[arg(short='a', long)]
     cache_info: bool,
-    /// Print verbose messages.
-    #[arg(short, long)]
     verbose: bool,
-    /// Print the license notice.
-    #[arg(short='l')]
-    license_notice: bool,
-    /// Print the license in full.
-    #[arg(short='L')]
-    license_full: bool,
-    /// A path to the RON config file. Defaults to ./vg.ron.
     config: Option<PathBuf>,
 }
 
@@ -134,6 +107,45 @@ struct Actions {
     actions: Vec<Action>
 }
 
+fn example_config() -> Actions {
+    Actions {
+        root: "path/to/root/dir".into(),
+        actions: vec![
+            Action::CompileFile(CompileFileOptions {
+                source: "path/to.source".into(),
+                implementations: Some(vec![
+                    ("variable".to_owned(), "Value".to_owned(),)
+                ].into_iter().collect()),
+                destination: "path/to/destination".into(),
+                delete_if_ignored: false,
+            }),
+            Action::CompileDirectory(CompileDirectoryOptions {
+                source: CompileFromSourceOptions {
+                    directory: "./path/to/source/directory".into(),
+                    implementations: Some(vec![
+                        ("variable".to_owned(), "Value".to_owned(),)
+                    ].into_iter().collect()),
+                    extension: "extension_to_compile".into(),
+                },
+                destination: CompileToDestinationOptions {
+                    directory: "./path/to/destination/directory".into(),
+                    extension: "extension_to_compile_to".into(),
+                    delete_if_ignored: true,
+                },
+            }),
+            Action::CopyFile(CopyFileOptions {
+                source: "./path/to/source.file".into(),
+                destination: "./path/to/destination.file".into(),
+            }),
+            Action::CopyDirectory(CopyDirectoryOptions {
+                source: "./path/to/source/directory".into(),
+                destination: "./path/to/destination/directory".into(),
+                extension: Some("an_optional_file_ext".to_owned()),
+            }),
+        ],
+    }
+}
+
 fn copy_all_to(src: PathBuf, dst: PathBuf, src_ext: &Option<String>) {
     create_dir_all(&dst).unwrap();
 
@@ -176,50 +188,93 @@ fn copy_all_to(src: PathBuf, dst: PathBuf, src_ext: &Option<String>) {
 }
 
 fn main() -> Result<()> {
+    let mut opts = Options::default();
+
+    Arguments::with_args(&mut opts, |args, opts, arg| {
+        match arg.option_type() {
+            OptionType::Argument(_) => match arg.qualifier() {
+                "h"|"help" => {
+                    println!("{HELP}");
+                    std::process::exit(0);
+                },
+                "e"|"example-config" => {
+                    let cfg = example_config();
+                    println!(
+                        "{}",
+                        ron::ser::to_string_pretty(
+                            &cfg, ron::ser::PrettyConfig::default()
+                        ).unwrap()
+                    );
+                    std::process::exit(0);
+                },
+                "i"|"implementation" => {
+                    opts.implementations.push(args.enforce_next_value(&arg)?);
+                },
+                "c"|"cached" => {
+                    opts.cached_items.push(args.enforce_next_value(&arg)?);
+                },
+                "n"|"no-cache" => opts.no_cache = true,
+                "r"|"read-only" => opts.read_only = true,
+                "t"|"timing" => opts.timing = true,
+                "b"|"benchmark" => opts.benchmark = Some(arg.qualifier().parse::<usize>().unwrap()),
+                "o"|"cache-info" => opts.cache_info = true,
+                "v"|"verbose" => opts.verbose = true,
+                "l"|"license-notice" => {
+                    println!("{LICENSE_NOTICE}");
+                    std::process::exit(0);
+                },
+                "L"|"license-full" => {
+                    println!("{LICENSE_FULL}");
+                    std::process::exit(0);
+                },
+                c => {
+                    return Err(IOError::new(
+                        ErrorKind::Other,
+                        format!("Invalid argument {}", c),
+                    ));
+                },
+            },
+            OptionType::Value(_) => if arg.is_last() {
+                opts.config = Some(PathBuf::from(arg.qualifier()));
+            } else {
+                return Err(IOError::new(
+                    ErrorKind::Other,
+                    "Value in illegal position.".to_owned(),
+                ));
+            },
+        }
+        Ok(())
+    }).map_err(|e| Error::IOError(e))?;
+
     let Options {
-        example_config, config, read_only, timing, verbose, implementation,
-        benchmark, cache_info, no_cache, cached_items, license_notice,
-        license_full,
-    } = Options::parse();
+        example_config, config, read_only, timing, verbose, implementations,
+        benchmark, cache_info, no_cache, cached_items
+    } = opts;
 
-    if license_full {
-        println!("{LICENSE_FULL}");
-        return Ok(());
-    } else if license_notice {
-        println!("{LICENSE_NOTICE}");
-        return Ok(());
-    }
-
-    let implementations = implementation
+    let implementations = implementations
+        .into_iter()
         .map(|v| {
-            v.into_iter()
-                .map(|v| {
-                    let mut split = v.splitn(2, ':');
-                    let k = split.next().unwrap();
-                    let v = split.next().unwrap_or("");
-                    (k.to_owned(), v.to_owned())
-                })
-                .collect::<HashMap<String, String>>()
+            let mut split = v.splitn(2, ':');
+            let k = split.next().unwrap();
+            let v = split.next().unwrap_or("");
+            (k.to_owned(), v.to_owned())
         })
-        .unwrap_or(HashMap::default());
+        .collect::<HashMap<String, String>>();
 
-    let cached_items = match cached_items {
-        Some(ii) => ii.into_iter()
-            .map(|i| {
-                let mut kv_split = i.splitn(2, ':');
-                let k = kv_split.next().unwrap_or("");
-                let p = PathBuf::from(k);
-                let mut b = p.clone();
-                if b.is_file() {
-                    b.pop();
-                }
+    let cached_items = cached_items.into_iter()
+        .map(|i| {
+            let mut kv_split = i.splitn(2, ':');
+            let k = kv_split.next().unwrap_or("");
+            let p = PathBuf::from(k);
+            let mut b = p.clone();
+            if b.is_file() {
+                b.pop();
+            }
 
-                let v = kv_split.next().unwrap_or("");
-                (b, p, v.to_owned())
-            })
-            .collect::<Vec<(PathBuf, PathBuf, String)>>(),
-        None => Vec::new(),
-    };
+            let v = kv_split.next().unwrap_or("");
+            (b, p, v.to_owned())
+        })
+        .collect::<Vec<(PathBuf, PathBuf, String)>>();
 
     macro_rules! vprintln {
         ($($parms:tt)*) => {

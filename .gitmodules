@@ -1,3 +1,6 @@
 [submodule "lib/nfm"]
 	path = lib/nfm
 	url = https://github.com/frankiebaffa/nfm
+[submodule "lib/args-rs"]
+	path = lib/args-rs
+	url = https://github.com/frankiebaffa/args-rs
