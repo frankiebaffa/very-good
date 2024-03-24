@@ -4,8 +4,11 @@ Usage: vgc [ARGUMENTS] <ROOT> <TARGET>
 
 Arguments:
     -n    --no-cache              Disable caching functionality.
-    -i    --implementation <IMPL> Include an implementation of a variable.
-    -c    --cached         <ITEM> Include a template in cache.
+    -i    --implementation <IMPL> Include an implementation of a variable. Each
+                                  implementation should be supplied in
+                                  "key:value" format.
+    -c    --cached         <ITEM> Include a template in cache. Each cached item
+                                  should be supplied in "key:value" format.
 
 Values:
     ROOT                          The root directory to use for absolute paths.

@@ -4,14 +4,19 @@ templates and files.
 Usage: vgd [ARGUMENTS] [<CONFIG>]
 
 Arguments:
-    -e    --example-config Print an example configuration file.
-    -i    --implementation Include an implementation of a variable.
-    -c    --cached         Include a template in cache.
-    -r    --read-only      Only read the file for means of validation, do not act.
-    -t    --timing         Include timing information.
-    -b    --benchmark      Include benchmark information over n runs.
-    -o    --cache-info     Include caching information.
-    -v    --verbose        Print verbose messages.
+    -e    --example-config        Print an example configuration file.
+    -i    --implementation <IMPL> Include an implementation of a variable.
+                                  Each implementation should be supplied in
+                                  "key:value" format.
+    -c    --cached         <ITEM> Include a template in cache. Each cached item
+                                  should be supplied in "key:value" format.
+    -r    --read-only             Only read the file for means of validation, do
+                                  not act.
+    -t    --timing                Include timing information.
+    -b    --benchmark             Include benchmark information over n runs.
+    -o    --cache-info            Include caching information.
+    -v    --verbose               Print verbose messages.
 
 Values:
-    CONFIG                 Path to the configuration file (Defaults to ./vg.ron).
+    CONFIG                        Path to the configuration file (Defaults to
+                                  ./vg.ron).
