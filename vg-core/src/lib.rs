@@ -860,14 +860,19 @@ impl Parser {
     }
 
     fn include(&mut self, context: &mut Context, cache: &mut FileCache) -> Result<bool> {
+        let mut is_raw = false;
+        let mut is_md = false;
         // can be included raw
-        let is_raw = if self.starts_with("raw") {
+        if self.starts_with("raw") {
             self.advance_into(3, &mut context.holding);
             self.trim_start_into(&mut context.holding);
-            true
-        } else {
-            false
-        };
+            is_raw = true;
+        } else if self.starts_with("md") {
+            self.advance_into(2, &mut context.holding);
+            self.trim_start_into(&mut context.holding);
+            is_md = true;
+            is_raw = true;
+        }
 
         // this keyword accepts a path value
         if !self.starts_with(PATH) {
@@ -933,11 +938,15 @@ impl Parser {
 
         let rebased = FileCache::rebase_path(&self.root_dir, &self.base_dir, &path);
 
-        // include content directly into output
+        // raw included content is directly injected into output
         if is_raw {
             match cache.get(&rebased) {
                 Ok(c) => {
-                    context.push_output(&c);
+                    if is_md {
+                        context.push_output(&NfmParser::parse_str(&c));
+                    } else {
+                        context.push_output(&c);
+                    }
                 },
                 Err(e) => match e {
                     Error::IsIgnored => {},

@@ -410,6 +410,18 @@ fn include_9() {
 }
 
 #[test]
+fn include_10() {
+    let output = Parser::compile(
+        "./test/include/10",
+        "./test/include/10/page.jinja",
+    ).unwrap();
+
+    let against = include_str!("../test/include/10/against.html");
+
+    assert_eq!(&against[0..against.len()-1], output);
+}
+
+#[test]
 fn for_1() {
     let output = Parser::compile(
         "./test/for/1",
