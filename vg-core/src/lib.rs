@@ -94,8 +94,10 @@ fn starts_with_keyword(s: &str) -> Option<String> {
 
 const PIPE: &str = "|";
 
-const FILTERS: [&str; 7] = [
+const FILTERS: [&str; 9] = [
     "flatten",
+    "trimend",
+    "trimstart",
     "trim",
     "detab",
     "replace",
@@ -112,6 +114,8 @@ enum Filter {
     Lower,
     Upper,
     Markdown,
+    TrimEnd,
+    TrimStart
 }
 
 fn starts_with_filter(s: &str) -> Option<String> {
@@ -691,6 +695,8 @@ impl Parser {
                         do_replace = true;
                     },
                     "md" => filters.push(Filter::Markdown),
+                    "trimend" => filters.push(Filter::TrimEnd),
+                    "trimstart" => filters.push(Filter::TrimStart),
                     _ => return false,
                 }
 
@@ -770,6 +776,8 @@ impl Parser {
                         Filter::Lower => i = i.to_lowercase(),
                         Filter::Replace(this, with) => i = i.replace(&this, &with),
                         Filter::Markdown => i = NfmParser::parse_str(&i),
+                        Filter::TrimEnd => i = i.trim_end().to_owned(),
+                        Filter::TrimStart => i = i.trim_start().to_owned(),
                     }
                 });
 
@@ -867,11 +875,15 @@ impl Parser {
             self.advance_into(3, &mut context.holding);
             self.trim_start_into(&mut context.holding);
             is_raw = true;
+            if self.starts_with("md") {
+                self.advance_into(2, &mut context.holding);
+                self.trim_start_into(&mut context.holding);
+                is_md = true;
+            }
         } else if self.starts_with("md") {
             self.advance_into(2, &mut context.holding);
             self.trim_start_into(&mut context.holding);
             is_md = true;
-            is_raw = true;
         }
 
         // this keyword accepts a path value
@@ -911,7 +923,7 @@ impl Parser {
 
         let mut as_name = String::new();
 
-        if self.starts_with(AS) {
+        if self.starts_with(AS) && !is_raw {
             self.advance_into(AS.len(), &mut context.holding);
 
             self.trim_start_into(&mut context.holding);
@@ -920,6 +932,10 @@ impl Parser {
                 self.copy_into(1, &mut as_name);
                 self.advance_into(1, &mut context.holding);
             }
+        }
+        // "as" keyword not allowed in conjunction with raw
+        else if self.starts_with(AS) && is_raw {
+            return Ok(false);
         }
 
         self.trim_start_into(&mut context.holding);
@@ -961,14 +977,12 @@ impl Parser {
         }
 
         // if as name is empty
-        let mut this_prefix = if as_name.is_empty() {
+        let (mut this_prefix, had_as) = if as_name.is_empty() {
             // then use the existing prefix
-            context.prefix.as_ref().map(|p| p.to_owned())
+            (context.prefix.as_ref().map(|p| p.to_owned()), false)
         } else {
             // if as name is not empty, combine with existing prefixing
-            context.prefix.as_ref()
-                .map(|p| format!("{p}.{as_name}"))
-                .or(Some(as_name))
+            (context.prefix.as_ref().map(|p| format!("{p}.{as_name}")).or(Some(as_name)), true)
         };
 
         // set prefix for includes
@@ -995,6 +1009,10 @@ impl Parser {
         let mut tmp_is_first = true;
         std::mem::swap(&mut tmp_is_first, &mut context.is_first);
 
+        // hold onto the output for now
+        let mut tmp_output = String::new();
+        std::mem::swap(&mut context.output, &mut tmp_output);
+
         match include_parser.parse(context, cache) {
             Ok(_) => {},
             Err(e) => match e {
@@ -1014,6 +1032,23 @@ impl Parser {
 
         // revert is_first
         std::mem::swap(&mut tmp_is_first, &mut context.is_first);
+
+        // put output back
+        std::mem::swap(&mut context.output, &mut tmp_output);
+
+        // if was markdown, parse output
+        if is_md {
+            tmp_output = NfmParser::parse_str(&tmp_output);
+        }
+
+        // if had 'as' keyword, put new output into an implementation
+        if had_as {
+            context.implementations.insert(this_prefix.unwrap(), tmp_output);
+        }
+        // otherwise, append new output onto the end of the original output
+        else {
+            context.push_output(&tmp_output);
+        }
 
         Ok(true)
     }
