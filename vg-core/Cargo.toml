@@ -8,23 +8,231 @@ description = "Very Good Templating Engine Core"
 version = "0.4"
 
 [[bench]]
-name = "bench_1"
+name = "block_1"
 harness = false
 
 [[bench]]
-name = "bench_2"
+name = "block_2"
 harness = false
 
 [[bench]]
-name = "bench_3"
+name = "block_3"
 harness = false
 
 [[bench]]
-name = "bench_4"
+name = "block_4"
 harness = false
 
 [[bench]]
-name = "bench_5"
+name = "block_5"
+harness = false
+
+[[bench]]
+name = "block_6"
+harness = false
+
+[[bench]]
+name = "block_7"
+harness = false
+
+[[bench]]
+name = "comment_1"
+harness = false
+
+[[bench]]
+name = "escape_1"
+harness = false
+
+[[bench]]
+name = "extends_1"
+harness = false
+
+[[bench]]
+name = "extends_2"
+harness = false
+
+[[bench]]
+name = "extends_3"
+harness = false
+
+[[bench]]
+name = "for_1"
+harness = false
+
+[[bench]]
+name = "for_2"
+harness = false
+
+[[bench]]
+name = "for_3"
+harness = false
+
+[[bench]]
+name = "for_4"
+harness = false
+
+[[bench]]
+name = "for_5"
+harness = false
+
+[[bench]]
+name = "for_6"
+harness = false
+
+[[bench]]
+name = "for_7"
+harness = false
+
+[[bench]]
+name = "for_8_name_default"
+harness = false
+
+[[bench]]
+name = "for_8_name"
+harness = false
+
+[[bench]]
+name = "for_8_name_reverse"
+harness = false
+
+[[bench]]
+name = "full_1_items"
+harness = false
+
+[[bench]]
+name = "full_1_home"
+harness = false
+
+[[bench]]
+name = "full_1_home_trim"
+harness = false
+
+[[bench]]
+name = "full_2_page"
+harness = false
+
+[[bench]]
+name = "full_3_page"
+harness = false
+
+[[bench]]
+name = "if_1"
+harness = false
+
+[[bench]]
+name = "if_2"
+harness = false
+
+[[bench]]
+name = "if_3"
+harness = false
+
+[[bench]]
+name = "if_4"
+harness = false
+
+[[bench]]
+name = "if_5"
+harness = false
+
+[[bench]]
+name = "if_6"
+harness = false
+
+[[bench]]
+name = "if_7"
+harness = false
+
+[[bench]]
+name = "if_8"
+harness = false
+
+[[bench]]
+name = "if_9"
+harness = false
+
+[[bench]]
+name = "if_10"
+harness = false
+
+[[bench]]
+name = "if_11"
+harness = false
+
+[[bench]]
+name = "if_12"
+harness = false
+
+[[bench]]
+name = "ignore_2"
+harness = false
+
+[[bench]]
+name = "ignore_3"
+harness = false
+
+[[bench]]
+name = "include_1"
+harness = false
+
+[[bench]]
+name = "include_2"
+harness = false
+
+[[bench]]
+name = "include_3"
+harness = false
+
+[[bench]]
+name = "include_4"
+harness = false
+
+[[bench]]
+name = "include_5"
+harness = false
+
+[[bench]]
+name = "include_7"
+harness = false
+
+[[bench]]
+name = "include_8"
+harness = false
+
+[[bench]]
+name = "include_9"
+harness = false
+
+[[bench]]
+name = "include_10"
+harness = false
+
+[[bench]]
+name = "include_11"
+harness = false
+
+[[bench]]
+name = "include_12"
+harness = false
+
+[[bench]]
+name = "include_13"
+harness = false
+
+[[bench]]
+name = "regular_1"
+harness = false
+
+[[bench]]
+name = "regular_2"
+harness = false
+
+[[bench]]
+name = "variable_1"
+harness = false
+
+[[bench]]
+name = "variable_2"
 harness = false
 
 [dependencies.nfm-core]
