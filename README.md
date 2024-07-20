@@ -2,7 +2,7 @@
 While he does have the power to destroy it, he wishes to show mercy and let it
 hang out as a reminder that some ideas are bad and just don't pan out.
 
-Superceeded ideologically by [arcana](https://github.com/frankiebaffa/arcana).
+Superceeded ideologically by [arcana](http://frankiebaffa.com/software/arcana.html).
 
 > _Use Very Good Templating Engine for all of your templating needs. Or do not.
 > I am not a beggar._  
