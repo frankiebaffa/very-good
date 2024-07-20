@@ -1,6 +1,6 @@
 **Warning**: This project has been flagged as _absolute trash_ by it's creator.
 While he does have the power to destroy it, he wishes to show mercy and let it
-hang out as a reminder that some ideas are bad.
+hang out as a reminder that some ideas are bad and just don't pan out.
 
 Superceeded ideologically by [arcana](https://github.com/frankiebaffa/arcana).
 
